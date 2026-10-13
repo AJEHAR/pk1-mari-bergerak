@@ -1,0 +1,271 @@
+<!doctype html>
+<!--
+  STUDIO RAKAM SUARA — untuk game "Mari Bergerak!"
+  1. Buka halaman ini (di GitHub Pages atau terus dari komputer) dengan Chrome/Edge.
+  2. Tekan "Rakam" pada setiap ayat, sebut dengan jelas, tekan lagi untuk berhenti.
+  3. Tekan "Muat turun semua (.zip)". Keluarkan folder audio/ dari zip dan
+     letak di sebelah index.html game (ganti folder audio/ sedia ada).
+  Rakaman disimpan dalam pelayar ini, jadi boleh sambung kemudian.
+-->
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rakam Suara · Mari Bergerak</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff7e8;--ink:#2b2d42;--muted:#6b6f80;--line:#f0e2c8;--primary:#ff7a3d;--primary-d:#e35f22;--ok:#25a862;--ok-bg:#e4f7ec;--rec:#e5484d}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Baloo 2',system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+.wrap{max-width:820px;margin:0 auto;padding:16px 16px 60px}
+h1{font-size:2rem;margin:6px 0 2px}
+.sub{color:var(--muted);margin:0 0 14px;font-size:1.05rem}
+.panel{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:3px solid var(--line)}
+.kemajuan{flex:1;min-width:200px}
+.kemajuan b{font-size:1.2rem}
+.bar{height:12px;border-radius:99px;background:#efe3cc;overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;width:0;background:var(--ok);border-radius:99px;transition:width .3s}
+.btn{font:inherit;font-weight:800;font-size:1.1rem;border:none;border-radius:16px;padding:10px 18px 6px;cursor:pointer;background:var(--primary);color:#fff;box-shadow:0 4px 0 var(--primary-d)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.kecil{font-size:1rem;padding:8px 14px 4px;background:#fff;color:var(--ink);border:3px solid var(--line);box-shadow:0 3px 0 var(--line)}
+.tip{background:#fff;border:3px solid var(--line);border-radius:18px;padding:12px 16px 8px;margin:14px 0;color:var(--muted)}
+.tip b{color:var(--ink)}
+.kumpulan{font-weight:800;color:var(--primary-d);margin:22px 0 6px;font-size:1.1rem}
+.kad{display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center;background:#fff;border:3px solid var(--line);border-radius:18px;padding:12px 14px 8px;margin-bottom:10px;transition:border-color .2s}
+.kad.siap{border-color:#bfe8cf}
+.kad.rakam{border-color:var(--rec);box-shadow:0 0 0 4px #fde2e3}
+.kad.seterusnya{border-color:var(--primary)}
+.no{width:36px;height:36px;border-radius:50%;background:#fbf6ec;display:grid;place-items:center;font-weight:800}
+.kad.siap .no{background:var(--ok);color:#fff}
+.teks{font-size:1.35rem;font-weight:700;line-height:1.2}
+.kunci{font-size:.85rem;color:var(--muted);font-weight:500}
+.aksi{display:flex;gap:6px;align-items:center}
+.aksi button{font:inherit;font-weight:800;border-radius:14px;cursor:pointer;min-height:46px}
+.b-rakam{background:var(--rec);color:#fff;border:none;padding:6px 14px 2px;min-width:112px;font-size:1.05rem}
+.kad.rakam .b-rakam{animation:denyut 1s infinite}
+@keyframes denyut{50%{opacity:.7}}
+.b-ikon{background:#fff;border:3px solid var(--line);width:46px;font-size:1.15rem}
+.b-ikon:disabled{opacity:.35;cursor:default}
+.ralat{color:var(--rec);font-weight:700;font-size:.95rem;grid-column:2/4}
+@media (max-width:560px){.kad{grid-template-columns:30px 1fr}.aksi{grid-column:1/3;justify-content:flex-end}.ralat{grid-column:1/3}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎙️ Studio Rakam Suara</h1>
+  <p class="sub">Game “Mari Bergerak!” (Pengurusan Kehidupan Tahun 1). Rakam setiap ayat dalam Bahasa Melayu dengan suara cikgu sendiri.</p>
+
+  <div class="panel">
+    <div class="kemajuan"><b id="kiraan">0 / 0</b> ayat sudah dirakam<div class="bar"><i id="bar"></i></div></div>
+    <button class="btn" id="btn-zip" disabled>⬇ Muat turun semua (.zip)</button>
+  </div>
+
+  <div class="tip">
+    <b>Tip:</b> rakam di bilik yang senyap, dekatkan mulut ±20 cm dari mikrofon, sebut perlahan dan jelas dengan sebutan baku.
+    Tekan <b>🔴 Rakam</b>, sebut ayat, kemudian tekan <b>⏹ Henti</b>. Senyap di awal dan akhir dipotong secara automatik.
+    Rakaman disimpan dalam pelayar ini, jadi cikgu boleh sambung kemudian.
+  </div>
+
+  <div id="senarai"></div>
+</div>
+
+<script src="data.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+const FRASA = window.FRASA || {};
+const KUNCI = Object.keys(FRASA);
+const KLIP = {};               // kunci -> Blob WAV
+const $ = s => document.querySelector(s);
+
+/* ---------- Simpanan dalam pelayar (IndexedDB) ---------- */
+const dbJanji = new Promise((res, rej) => {
+  try {
+    const r = indexedDB.open('rakam-suara-mari-bergerak', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('klip');
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  } catch (e) { rej(e); }
+});
+async function dbTx(mod, kerja) {
+  const db = await dbJanji;
+  return new Promise((res, rej) => {
+    const t = db.transaction('klip', mod), s = t.objectStore('klip');
+    const hasil = kerja(s);
+    t.oncomplete = () => res(hasil && hasil.result); t.onerror = () => rej(t.error);
+  });
+}
+const dbSimpan = (k, b) => dbTx('readwrite', s => s.put(b, k)).catch(() => {});
+const dbPadam = k => dbTx('readwrite', s => s.delete(k)).catch(() => {});
+async function dbMuat() {
+  try {
+    const db = await dbJanji;
+    await new Promise((res, rej) => {
+      const rq = db.transaction('klip').objectStore('klip').openCursor();
+      rq.onsuccess = () => { const c = rq.result; if (c) { if (FRASA[c.key]) KLIP[c.key] = c.value; c.continue(); } else res(); };
+      rq.onerror = () => rej(rq.error);
+    });
+  } catch (e) { /* tiada simpanan, guna memori sahaja */ }
+}
+
+/* ---------- Senarai ayat ---------- */
+function kumpulan(k) {
+  if (k === 'tulis_nama') return 'Skrin mula';
+  if (k.startsWith('soalan') || k === 'cari') return 'Soalan';
+  if (k.startsWith('puji')) return 'Pujian';
+  if (k.startsWith('nama_')) return 'Nama pergerakan (disebut selepas soalan / pujian / jawapan)';
+  if (k === 'cuba_lagi' || k === 'jawapannya') return 'Bila salah';
+  if (k.startsWith('kira_')) return 'Kiraan (Mari Lakukan)';
+  if (k.startsWith('lakukan')) return 'Mari Lakukan';
+  return 'Tamat game';
+}
+function bina() {
+  let html = '', kum = '';
+  KUNCI.forEach((k, i) => {
+    const g = kumpulan(k);
+    if (g !== kum) { html += `<div class="kumpulan">${g}</div>`; kum = g; }
+    html += `<div class="kad" id="kad-${k}" data-k="${k}">
+      <div class="no">${i + 1}</div>
+      <div><div class="teks"></div><div class="kunci">audio/${k}.wav</div></div>
+      <div class="aksi">
+        <button class="b-rakam">🔴 Rakam</button>
+        <button class="b-ikon b-main" title="Dengar" aria-label="Dengar" disabled>▶</button>
+        <button class="b-ikon b-padam" title="Padam" aria-label="Padam" disabled>🗑</button>
+      </div>
+      <div class="ralat"></div>
+    </div>`;
+  });
+  $('#senarai').innerHTML = html;
+  KUNCI.forEach(k => { $(`#kad-${k} .teks`).textContent = FRASA[k]; });
+}
+function kemaskini() {
+  const n = KUNCI.filter(k => KLIP[k]).length;
+  $('#kiraan').textContent = `${n} / ${KUNCI.length}`;
+  $('#bar').style.width = (n / KUNCI.length * 100) + '%';
+  $('#btn-zip').disabled = n === 0;
+  const seterusnya = KUNCI.find(k => !KLIP[k]);
+  KUNCI.forEach(k => {
+    const kad = $(`#kad-${k}`);
+    kad.classList.toggle('siap', !!KLIP[k]);
+    kad.classList.toggle('seterusnya', k === seterusnya);
+    kad.querySelector('.b-main').disabled = !KLIP[k];
+    kad.querySelector('.b-padam').disabled = !KLIP[k];
+    if (!kad.classList.contains('rakam')) kad.querySelector('.b-rakam').textContent = KLIP[k] ? '🔁 Rakam semula' : '🔴 Rakam';
+  });
+}
+
+/* ---------- Rakaman ---------- */
+let strim = null, perakam = null, kunciRakam = null, pemasa = null, pemain = null;
+async function mulaRakam(k) {
+  const kad = $(`#kad-${k}`), ralat = kad.querySelector('.ralat');
+  ralat.textContent = '';
+  try {
+    strim = strim || await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+  } catch (e) {
+    ralat.textContent = 'Mikrofon tidak dapat dibuka. Benarkan akses mikrofon pada pelayar, kemudian cuba lagi.';
+    return;
+  }
+  hentiMain();
+  const cebisan = [];
+  perakam = new MediaRecorder(strim);
+  kunciRakam = k;
+  perakam.ondataavailable = e => { if (e.data.size) cebisan.push(e.data); };
+  perakam.onstop = async () => {
+    kad.classList.remove('rakam'); clearTimeout(pemasa);
+    const kunci = kunciRakam; kunciRakam = null; perakam = null;
+    try {
+      const wav = await proses(new Blob(cebisan, { type: cebisan[0] ? cebisan[0].type : 'audio/webm' }));
+      KLIP[kunci] = wav; await dbSimpan(kunci, wav);
+      kemaskini(); main(kunci);
+    } catch (e) {
+      kad.querySelector('.ralat').textContent = e.message || 'Rakaman gagal. Cuba lagi.';
+      kemaskini();
+    }
+  };
+  perakam.start();
+  kad.classList.add('rakam');
+  kad.querySelector('.b-rakam').textContent = '⏹ Henti';
+  pemasa = setTimeout(() => hentiRakam(), 12000);
+}
+function hentiRakam() { if (perakam && perakam.state === 'recording') perakam.stop(); }
+
+// Tukar rakaman kepada WAV mono 24 kHz, potong senyap, seimbangkan kekuatan
+async function proses(blob) {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  const ctx = new Ctx();
+  const buf = await ctx.decodeAudioData(await blob.arrayBuffer());
+  ctx.close && ctx.close();
+  const n = buf.length, sr = buf.sampleRate, mono = new Float32Array(n);
+  for (let c = 0; c < buf.numberOfChannels; c++) { const d = buf.getChannelData(c); for (let i = 0; i < n; i++) mono[i] += d[i] / buf.numberOfChannels; }
+  let puncak = 0; for (let i = 0; i < n; i++) puncak = Math.max(puncak, Math.abs(mono[i]));
+  if (puncak < 0.02) throw new Error('Tiada suara dikesan. Dekatkan mulut ke mikrofon dan cuba lagi.');
+  const had = Math.max(0.015, puncak * 0.08);
+  let a = 0, b = n - 1;
+  while (a < n && Math.abs(mono[a]) < had) a++;
+  while (b > a && Math.abs(mono[b]) < had) b--;
+  const pad = Math.round(sr * 0.15);
+  a = Math.max(0, a - pad); b = Math.min(n - 1, b + pad);
+  const potong = mono.slice(a, b + 1);
+  const SR = 24000;
+  const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(potong.length * SR / sr)), SR);
+  const sb = off.createBuffer(1, potong.length, sr); sb.copyToChannel(potong, 0);
+  const src = off.createBufferSource(); src.buffer = sb; src.connect(off.destination); src.start();
+  const keluar = (await off.startRendering()).getChannelData(0);
+  const gandaan = 0.9 / puncak;
+  const akhir = Float32Array.from(keluar, x => x * gandaan);
+  // pudar masuk/keluar 10 ms supaya tiada bunyi "klik"
+  const f = Math.min(240, akhir.length >> 1);
+  for (let i = 0; i < f; i++) { akhir[i] *= i / f; akhir[akhir.length - 1 - i] *= i / f; }
+  return keWav(akhir, SR);
+}
+function keWav(d, sr) {
+  const b = new ArrayBuffer(44 + d.length * 2), v = new DataView(b);
+  const t = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  t(0, 'RIFF'); v.setUint32(4, 36 + d.length * 2, true); t(8, 'WAVE'); t(12, 'fmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  t(36, 'data'); v.setUint32(40, d.length * 2, true);
+  for (let i = 0; i < d.length; i++) { const s = Math.max(-1, Math.min(1, d[i])); v.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true); }
+  return new Blob([b], { type: 'audio/wav' });
+}
+
+/* ---------- Main balik & padam ---------- */
+function hentiMain() { if (pemain) { pemain.pause(); URL.revokeObjectURL(pemain.src); pemain = null; } }
+function main(k) {
+  hentiMain();
+  if (!KLIP[k]) return;
+  pemain = new Audio(URL.createObjectURL(KLIP[k]));
+  pemain.play().catch(() => {});
+}
+
+$('#senarai').addEventListener('click', e => {
+  const kad = e.target.closest('.kad'); if (!kad) return;
+  const k = kad.dataset.k;
+  if (e.target.closest('.b-rakam')) {
+    if (kunciRakam === k) hentiRakam();
+    else if (!kunciRakam) mulaRakam(k);
+  } else if (e.target.closest('.b-main')) main(k);
+  else if (e.target.closest('.b-padam')) {
+    if (confirm(`Padam rakaman: "${FRASA[k]}"?`)) { delete KLIP[k]; dbPadam(k); kemaskini(); }
+  }
+});
+
+/* ---------- Muat turun zip ---------- */
+$('#btn-zip').addEventListener('click', async () => {
+  if (typeof JSZip === 'undefined') { alert('Alat zip tidak dapat dimuatkan. Semak sambungan internet.'); return; }
+  const zip = new JSZip(), folder = zip.folder('audio');
+  KUNCI.forEach(k => { if (KLIP[k]) folder.file(`${k}.wav`, KLIP[k]); });
+  const kurang = KUNCI.filter(k => !KLIP[k]).length;
+  if (kurang && !confirm(`${kurang} ayat belum dirakam. Muat turun yang sudah ada sahaja?`)) return;
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'audio-mari-bergerak.zip';
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+});
+
+bina();
+dbMuat().then(kemaskini);
+</script>
+</body>
+</html>
